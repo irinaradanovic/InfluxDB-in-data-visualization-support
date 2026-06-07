@@ -7,6 +7,26 @@ from datetime import datetime
 from influxdb_client import InfluxDBClient, Point, WriteOptions
 from influxdb_client.client.write_api import SYNCHRONOUS
 
+def check_if_data_exists(url, token, org, bucket):
+    print("Checking if data already exists in InfluxDB...")
+    with InfluxDBClient(url=url, token=token, org=org) as client:
+        query_api = client.query_api()
+        
+        flux_query = f'''
+        from(bucket: "{bucket}")
+          |> range(start: 2016-01-01T00:00:00Z, stop: now())
+          |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+          |> limit(n: 1)
+        '''
+        try:
+            result = query_api.query(flux_query)
+            if len(result) > 0:
+                return True
+        except Exception as e:
+            print(f"Note: Could not query DB or bucket empty (Details: {e})")
+    return False
+
+
 def wait_for_influx(url, timeout=60):
     start_time = time.time()
     print("Waiting for InfluxDB...")
@@ -67,6 +87,10 @@ def main():
 
     if not wait_for_influx(url):
         sys.exit(1)
+
+    if check_if_data_exists(url, token, org, bucket):
+        print("=== INFO: Data already exists in InfluxDB. Skipping ingest! ===")
+        sys.exit(0)  # Turn off container
 
     # Cleaning data
     df = clean_and_prepare_data(csv_path)
