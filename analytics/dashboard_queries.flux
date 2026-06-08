@@ -83,3 +83,38 @@ from(bucket: "smart_home")
     |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
     |> filter(fn: (r) => r["_field"] == "use")
     |> keep(columns: ["_time", "_value"])
+
+  // [BAND]
+
+   from(bucket: "smart_home")
+    |> range(start: 2016-01-01T00:00:00Z, stop: 2017-01-01T00:00:00Z)
+    |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+    |> filter(fn: (r) => r["_field"] == "gen")
+    |> group(columns: ["_measurement", "_field"])
+    |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)
+    |> yield(name: "mean")
+
+  from(bucket: "smart_home")
+    |> range(start: 2016-01-01T00:00:00Z, stop: 2017-01-01T00:00:00Z)
+    |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+    |> filter(fn: (r) => r["_field"] == "gen")
+    |> group(columns: ["_measurement", "_field"])
+    |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+    |> yield(name: "max")
+
+  from(bucket: "smart_home")
+    |> range(start: 2016-01-01T00:00:00Z, stop: 2017-01-01T00:00:00Z)
+    |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+    |> filter(fn: (r) => r["_field"] == "gen")
+    |> group(columns: ["_measurement", "_field"])
+    |> aggregateWindow(every: 1d, fn: min, createEmpty: false)
+    |> yield(name: "min")
+  
+  // [HEATMAP]
+  
+  from(bucket: "smart_home")
+  |> range(start: 2016-01-01T00:00:00Z, stop: 2017-01-01T00:00:00Z)
+  |> filter(fn: (r) => r._measurement == "smart_home_metrics")
+  |> filter(fn: (r) => r._field == "use")
+  |> aggregateWindow(every: 12h, fn: mean, createEmpty: false)
+  |> yield(name: "heatmap_ukupna_potrosnja")
