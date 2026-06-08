@@ -40,3 +40,30 @@ generation = from(bucket: "smart_home")
 
 union(tables: [temp, generation])
   |> group(columns: ["Tip_Podatka"])
+
+
+// [TABLE]
+
+import "math"
+
+from(bucket: "smart_home")
+  |> range(start: 2016-01-15T00:00:00Z, stop: 2016-01-16T00:00:00Z)
+  |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+  |> filter(fn: (r) => r["_field"] == "use" or
+                       r["_field"] == "Fridge" or
+                       r["_field"] == "Kitchen" or
+                       r["_field"] == "Home office" or
+                       r["_field"] == "Microwave" or
+                       r["_field"] == "Furnace")
+  |> map(fn: (r) => ({ r with _value: math.round(x: r._value * 10000.0) / 10000.0 }))
+  |> group()
+  |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+  |> keep(columns: ["_time", "use", "Fridge", "Kitchen", "Home office", "Microwave", "Furnace"])
+
+  // [HISTOGRAM]
+
+  from(bucket: "smart_home")
+    |> range(start: 2016-01-15T00:00:00Z, stop: 2016-01-16T00:00:00Z)
+    |> filter(fn: (r) => r["_measurement"] == "smart_home_metrics")
+    |> filter(fn: (r) => r["_field"] == "use")
+    |> keep(columns: ["_time", "_value"])
