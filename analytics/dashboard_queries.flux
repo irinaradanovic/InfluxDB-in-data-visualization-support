@@ -1,3 +1,19 @@
+// [GRAPH]
+from(bucket: "smart_home")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r._measurement == "smart_home_metrics")
+  |> filter(fn: (r) => r._field == "Furnace" or r._field == "Kitchen")
+  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)
+  |> yield(name: "mean")
+
+// [SINGLE STAT]
+from(bucket: "smart_home")
+  |> range(start: 2016-01-01T00:00:00Z, stop: 2017-01-01T00:00:00Z)
+  |> filter(fn: (r) => r._measurement == "smart_home_metrics")
+  |> filter(fn: (r) => r._field == "use")
+  |> group()
+  |> sum()
+
 // [GAUGE] - Current central furnace load status
 
 from(bucket: "smart_home")
